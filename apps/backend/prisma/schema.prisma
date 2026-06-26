@@ -1,15 +1,154 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+enum ReceivableStatus {
+  REGISTERED
+  PRICED
+  SETTLED
+  CANCELLED
+}
+
+enum SettlementStatus {
+  CONFIRMED
+  REVERSED
+  FAILED
+}
+
+model Cedent {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  document  String   @unique @db.VarChar(20)
+  email     String?  @db.VarChar(120)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  receivables Receivable[]
+
+  @@map("cedents")
+}
+
+model Currency {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique @db.VarChar(3)
+  name      String   @db.VarChar(80)
+  symbol    String   @db.VarChar(8)
+  isBase    Boolean  @default(false) @map("is_base")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  exchangeRates   ExchangeRate[]
+  receivables     Receivable[]
+  settlements     Settlement[]
+  settlementItems SettlementItem[]
+
+  @@map("currencies")
+}
+
+model ExchangeRate {
+  id         String   @id @default(uuid()) @db.Uuid
+  currencyId String   @map("currency_id") @db.Uuid
+  rate       Decimal  @db.Decimal(18, 8)
+  rateDate   DateTime @map("rate_date") @db.Date
+  source     String   @db.VarChar(80)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  currency Currency @relation(fields: [currencyId], references: [id])
+
+  @@unique([currencyId, rateDate])
+  @@index([rateDate])
+  @@map("exchange_rates")
+}
+
+model ReceivableType {
+  id            String   @id @default(uuid()) @db.Uuid
+  code          String   @unique @db.VarChar(40)
+  name          String   @db.VarChar(120)
+  spreadPercent Decimal  @map("spread_percent") @db.Decimal(8, 6)
+  description   String?  @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  receivables Receivable[]
+
+  @@map("receivable_types")
+}
+
+model Receivable {
+  id         String           @id @default(uuid()) @db.Uuid
+  cedentId   String           @map("cedent_id") @db.Uuid
+  typeId     String           @map("type_id") @db.Uuid
+  faceValue  Decimal          @map("face_value") @db.Decimal(18, 6)
+  currencyId String           @map("currency_id") @db.Uuid
+  dueDate    DateTime         @map("due_date") @db.Date
+  status     ReceivableStatus @default(REGISTERED)
+  version    Int              @default(1)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  cedent      Cedent         @relation(fields: [cedentId], references: [id])
+  type        ReceivableType @relation(fields: [typeId], references: [id])
+  currency    Currency       @relation(fields: [currencyId], references: [id])
+  settlements Settlement[]
+
+  @@index([cedentId])
+  @@index([currencyId])
+  @@index([dueDate])
+  @@index([status])
+  @@map("receivables")
+}
+
+model Settlement {
+  id                String           @id @default(uuid()) @db.Uuid
+  receivableId      String           @map("receivable_id") @db.Uuid
+  settlementDate    DateTime         @default(now()) @map("settlement_date")
+  presentValue      Decimal          @map("present_value") @db.Decimal(18, 6)
+  paymentCurrencyId String           @map("payment_currency_id") @db.Uuid
+  exchangeRate      Decimal?         @map("exchange_rate") @db.Decimal(18, 8)
+  baseRate          Decimal          @map("base_rate") @db.Decimal(8, 6)
+  spreadPercent     Decimal          @map("spread_percent") @db.Decimal(8, 6)
+  status            SettlementStatus @default(CONFIRMED)
+  version           Int              @default(1)
+  createdAt         DateTime         @default(now()) @map("created_at")
+
+  receivable      Receivable       @relation(fields: [receivableId], references: [id])
+  paymentCurrency Currency         @relation(fields: [paymentCurrencyId], references: [id])
+  items           SettlementItem[]
+
+  @@index([settlementDate])
+  @@index([paymentCurrencyId])
+  @@index([status])
+  @@map("settlements")
+}
+
+model SettlementItem {
+  id           String   @id @default(uuid()) @db.Uuid
+  settlementId String   @map("settlement_id") @db.Uuid
+  amount       Decimal  @db.Decimal(18, 6)
+  currencyId   String   @map("currency_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  settlement Settlement @relation(fields: [settlementId], references: [id])
+  currency   Currency   @relation(fields: [currencyId], references: [id])
+
+  @@index([settlementId])
+  @@map("settlement_items")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  entity    String   @db.VarChar(80)
+  entityId  String   @map("entity_id") @db.Uuid
+  action    String   @db.VarChar(80)
+  oldValues Json?    @map("old_values")
+  newValues Json?    @map("new_values")
+  userId    String?  @map("user_id") @db.VarChar(80)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }
