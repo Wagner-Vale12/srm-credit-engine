@@ -1,10 +1,22 @@
-import { Module } from '@nestjs/common';
 import { HealthModule } from './presentation/http/health/health.module';
 import { CurrenciesModule } from './presentation/http/currencies/currencies.module';
 import { PricingModule } from './presentation/http/pricing/pricing.module';
 import { SettlementsModule } from './presentation/http/settlements/settlements.module';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ObservabilityModule } from './shared/observability/observability.module';
+import { CorrelationIdMiddleware } from './shared/observability/correlation-id.middleware';
 
 @Module({
-  imports: [HealthModule, CurrenciesModule, PricingModule, SettlementsModule],
+  imports: [
+    HealthModule,
+    CurrenciesModule,
+    PricingModule,
+    SettlementsModule,
+    ObservabilityModule,
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(CorrelationIdMiddleware).forRoutes('*');
+  }
+}
