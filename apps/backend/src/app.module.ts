@@ -5,6 +5,7 @@ import { SettlementsModule } from './presentation/http/settlements/settlements.m
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ObservabilityModule } from './shared/observability/observability.module';
 import { CorrelationIdMiddleware } from './shared/observability/correlation-id.middleware';
+import { ReceivablesModule } from './presentation/http/receivables/receivables.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { CorrelationIdMiddleware } from './shared/observability/correlation-id.m
     PricingModule,
     SettlementsModule,
     ObservabilityModule,
+    ReceivablesModule,
   ],
 })
 export class AppModule implements NestModule {
