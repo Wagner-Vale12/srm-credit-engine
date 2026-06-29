@@ -47,6 +47,13 @@ function getErrorMessage(error: unknown) {
   return "Unexpected error";
 }
 
+type ReceivableWorkflow = {
+  pricingResult?: unknown;
+  settlementResult?: unknown;
+  settlementReport?: unknown;
+  settlementId?: string;
+};
+
 function App() {
   const [health, setHealth] = useState<ApiHealth | null>(null);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -58,12 +65,10 @@ function App() {
   const [createdReceivable, setCreatedReceivable] = useState<Receivable | null>(
     null,
   );
-  const [pricingResult, setPricingResult] = useState<unknown>(null);
-  const [settlementResult, setSettlementResult] = useState<unknown>(null);
-  const [settlementReport, setSettlementReport] = useState<unknown>(null);
-
-  const [settlementId, setSettlementId] = useState("");
   const [selectedReceivableId, setSelectedReceivableId] = useState("");
+  const [workflowByReceivable, setWorkflowByReceivable] = useState<
+    Record<string, ReceivableWorkflow>
+  >({});
 
   const [receivableForm, setReceivableForm] = useState<CreateReceivablePayload>(
     {
@@ -74,16 +79,42 @@ function App() {
       dueDate: "2026-12-31",
     },
   );
+  const selectedReceivable = receivables.find(
+    (receivable) => receivable.id === selectedReceivableId,
+  );
+  const selectedWorkflow = selectedReceivableId
+    ? (workflowByReceivable[selectedReceivableId] ?? {})
+    : {};
+  const pricingResult = selectedWorkflow.pricingResult;
+  const settlementResult = selectedWorkflow.settlementResult;
+  const settlementReport = selectedWorkflow.settlementReport;
+  const settlementId = selectedWorkflow.settlementId ?? "";
+
   const pricingPayload: PricingSimulationPayload = useMemo(
     () => ({
-      receivableType: receivableForm.receivableTypeCode,
-      currencyCode: receivableForm.currencyCode,
-      faceValue: receivableForm.faceValue,
+      receivableType:
+        selectedReceivable?.receivableTypeCode ??
+        selectedReceivable?.receivableType ??
+        receivableForm.receivableTypeCode,
+      currencyCode:
+        selectedReceivable?.currencyCode ?? receivableForm.currencyCode,
+      faceValue: selectedReceivable?.faceValue ?? receivableForm.faceValue,
       baseRateMonthly: "1.00",
-      dueDate: receivableForm.dueDate,
+      dueDate: selectedReceivable?.dueDate ?? receivableForm.dueDate,
     }),
-    [receivableForm],
+    [receivableForm, selectedReceivable],
   );
+
+  function updateSelectedWorkflow(update: Partial<ReceivableWorkflow>) {
+    if (!selectedReceivableId) return;
+    setWorkflowByReceivable((current) => ({
+      ...current,
+      [selectedReceivableId]: {
+        ...current[selectedReceivableId],
+        ...update,
+      },
+    }));
+  }
 
   async function loadInitialData() {
     setLoading(true);
@@ -138,11 +169,11 @@ function App() {
   async function handlePricingSimulation() {
     setLoading(true);
     setError("");
-    setPricingResult(null);
+    updateSelectedWorkflow({ pricingResult: undefined });
 
     try {
       const response = await api.simulatePricing(pricingPayload);
-      setPricingResult(response);
+      updateSelectedWorkflow({ pricingResult: response });
     } catch (err) {
       setError(getErrorMessage(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -154,21 +185,24 @@ function App() {
   async function handleCreateSettlement() {
     setLoading(true);
     setError("");
-    setSettlementResult(null);
-    setSettlementReport(null);
+    updateSelectedWorkflow({
+      settlementResult: undefined,
+      settlementReport: undefined,
+      settlementId: undefined,
+    });
 
     try {
       const response = await api.createSettlement({
         receivableId: selectedReceivableId,
-        paymentCurrencyCode: receivableForm.currencyCode,
+        paymentCurrencyCode: pricingPayload.currencyCode,
         baseRateMonthly: "1.00",
         userId: "frontend-mvp",
       });
-      setSettlementResult(response);
+      updateSelectedWorkflow({ settlementResult: response });
 
       const id = extractId(response);
       if (id) {
-        setSettlementId(id);
+        updateSelectedWorkflow({ settlementId: id });
       }
 
       const receivablesResponse = await api.receivables();
@@ -183,17 +217,17 @@ function App() {
 
   async function handleLoadSettlementReport() {
     if (!settlementId) {
-      setError("Informe o settlementId para buscar o relatório.");
+      setError("Enter the settlement ID to load the report.");
       return;
     }
 
     setLoading(true);
     setError("");
-    setSettlementReport(null);
+    updateSelectedWorkflow({ settlementReport: undefined });
 
     try {
       const response = await api.settlementReport(settlementId);
-      setSettlementReport(response);
+      updateSelectedWorkflow({ settlementReport: response });
     } catch (err) {
       setError(getErrorMessage(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -368,9 +402,11 @@ function App() {
               className="secondary"
               onClick={() => {
                 setCreatedReceivable(null);
-                setSettlementResult(null);
-                setSettlementReport(null);
-                setSettlementId("");
+                updateSelectedWorkflow({
+                  settlementResult: undefined,
+                  settlementReport: undefined,
+                  settlementId: undefined,
+                });
               }}
             >
               Create another receivable
@@ -529,7 +565,12 @@ function App() {
             Settlement ID
             <input
               value={settlementId}
-              onChange={(event) => setSettlementId(event.target.value)}
+              onChange={(event) =>
+                updateSelectedWorkflow({
+                  settlementId: event.target.value,
+                  settlementReport: undefined,
+                })
+              }
               placeholder="Paste the settlement ID"
             />
           </label>
