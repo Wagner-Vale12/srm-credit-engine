@@ -213,19 +213,19 @@ function App() {
           <p className="eyebrow">SRM Credit Engine</p>
           <h1>Frontend MVP</h1>
           <p>
-            Demonstração ponta a ponta para criação, precificação e liquidação
-            de recebíveis multimoedas.
+            End-to-end demonstration for creation, pricing, and settlement of
+            multi-currency receivables.
           </p>
         </div>
 
         <button type="button" onClick={loadInitialData} disabled={loading}>
-          {loading ? "Carregando..." : "Recarregar dados"}
+          {loading ? "Loading..." : "Reload data"}
         </button>
       </section>
 
       {error && (
         <section className="error-card">
-          <strong>Erro na API</strong>
+          <strong>API error</strong>
           <pre>{error}</pre>
         </section>
       )}
@@ -285,12 +285,12 @@ function App() {
                     cedentId: event.target.value,
                   }))
                 }
-                placeholder="Cole aqui o ID do cedente seedado"
+                placeholder="Paste the seeded cedent ID"
               />
             </label>
 
             <label>
-              Tipo
+              Type
               <select
                 value={receivableForm.receivableTypeCode}
                 onChange={(event) =>
@@ -306,7 +306,7 @@ function App() {
             </label>
 
             <label>
-              Moeda
+              Currency
               <select
                 value={receivableForm.currencyCode}
                 onChange={(event) =>
@@ -322,7 +322,7 @@ function App() {
             </label>
 
             <label>
-              Valor de face
+              Face value
               <input
                 value={receivableForm.faceValue}
                 onChange={(event) =>
@@ -335,7 +335,7 @@ function App() {
             </label>
 
             <label>
-              Data de vencimento
+              Due date
               <input
                 type="date"
                 value={receivableForm.dueDate}
@@ -357,10 +357,10 @@ function App() {
             }
           >
             {loading
-              ? "Criando..."
+              ? "Creating..."
               : createdReceivable
-                ? "Recebível criado"
-                : "Criar recebível"}
+                ? "Receivable created"
+                : "Create receivable"}
           </button>
           {createdReceivable && (
             <button
@@ -373,13 +373,13 @@ function App() {
                 setSettlementId("");
               }}
             >
-              Criar outro recebível
+              Create another receivable
             </button>
           )}
 
           {createdReceivable && (
             <div className="result">
-              <h3>Recebível criado</h3>
+              <h3>Receivable created</h3>
               <pre>{formatJson(createdReceivable)}</pre>
             </div>
           )}
@@ -401,12 +401,12 @@ function App() {
               <thead>
                 <tr>
                   <th>ID</th>
-                  <th>Tipo</th>
-                  <th>Moeda</th>
-                  <th>Valor</th>
-                  <th>Vencimento</th>
+                  <th>Type</th>
+                  <th>Currency</th>
+                  <th>Value</th>
+                  <th>Due date</th>
                   <th>Status</th>
-                  <th>Ação</th>
+                  <th>Action</th>
                 </tr>
               </thead>
 
@@ -447,7 +447,7 @@ function App() {
                           }
                           onClick={() => setSelectedReceivableId(receivable.id)}
                         >
-                          {isSelected ? "Selecionado" : "Selecionar"}
+                          {isSelected ? "Selected" : "Select"}
                         </button>
                       </td>
                     </tr>
@@ -469,8 +469,8 @@ function App() {
           </div>
 
           <p className="muted">
-            A simulação usa os mesmos dados do formulário de criação do
-            recebível, com taxa base mensal de 1.00%.
+            The simulation uses the same data as the receivable creation form,
+            with a 1.00% monthly base rate.
           </p>
 
           <pre>{formatJson(pricingPayload)}</pre>
@@ -480,12 +480,12 @@ function App() {
             onClick={handlePricingSimulation}
             disabled={loading || !selectedReceivableId}
           >
-            {loading ? "Simulando..." : "Simular pricing"}
+            {loading ? "Simulating..." : "Simulate pricing"}
           </button>
 
           {pricingResult ? (
             <div className="result">
-              <h3>Resultado da simulação</h3>
+              <h3>Simulation result</h3>
               <pre>{formatJson(pricingResult)}</pre>
             </div>
           ) : null}
@@ -500,11 +500,11 @@ function App() {
           </div>
 
           <label>
-            Receivable ID selecionado
+            Selected receivable ID
             <input
               value={selectedReceivableId}
               onChange={(event) => setSelectedReceivableId(event.target.value)}
-              placeholder="Selecione ou cole o ID do recebível"
+              placeholder="Select or paste the receivable ID"
             />
           </label>
 
@@ -513,12 +513,12 @@ function App() {
             onClick={handleCreateSettlement}
             disabled={loading || !selectedReceivableId}
           >
-            {loading ? "Liquidando..." : "Liquidar recebível"}
+            {loading ? "Creating settlement..." : "Create settlement"}
           </button>
 
           {settlementResult ? (
             <div className="result">
-              <h3>Settlement criado</h3>
+              <h3>Settlement created</h3>
               <pre>{formatJson(settlementResult)}</pre>
             </div>
           ) : null}
@@ -530,7 +530,7 @@ function App() {
             <input
               value={settlementId}
               onChange={(event) => setSettlementId(event.target.value)}
-              placeholder="Cole o ID da liquidação"
+              placeholder="Paste the settlement ID"
             />
           </label>
 
@@ -539,12 +539,12 @@ function App() {
             onClick={handleLoadSettlementReport}
             disabled={loading || !settlementId}
           >
-            Buscar relatório
+            Load report
           </button>
 
           {settlementReport ? (
             <div className="result">
-              <h3>Relatório de liquidação</h3>
+              <h3>Settlement report</h3>
               <pre>{formatJson(settlementReport)}</pre>
             </div>
           ) : null}
