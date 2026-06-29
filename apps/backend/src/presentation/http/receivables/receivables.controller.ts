@@ -46,7 +46,7 @@ export class ReceivablesController {
       example: {
         statusCode: 400,
         error: 'Bad Request',
-        // eslint-disable-next-line prettier/prettier
+
         message: [
           'faceValue must be a positive decimal string. Example: 10000.00',
         ],
