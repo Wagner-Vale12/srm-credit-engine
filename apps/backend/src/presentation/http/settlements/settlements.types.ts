@@ -54,3 +54,24 @@ export type SettlementReport = {
     exchangeRate: string | null;
   };
 };
+
+export type ListSettlementsInput = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  currencyCode?: string;
+  receivableTypeCode?: string;
+  cedentId?: string;
+  settlementDateFrom?: string;
+  settlementDateTo?: string;
+};
+
+export type PaginatedSettlements = {
+  data: SettlementSummary[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+};

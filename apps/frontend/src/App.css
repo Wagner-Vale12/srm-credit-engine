@@ -79,6 +79,10 @@
   margin-left: 12px;
 }
 
+.card > label + button {
+  margin-top: 12px;
+}
+
 .step {
   display: inline-flex;
   margin-bottom: 8px;
@@ -279,3 +283,20 @@ pre {
     grid-template-columns: 1fr;
   }
 }
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.pagination label { display: flex; align-items: center; gap: 0.5rem; }

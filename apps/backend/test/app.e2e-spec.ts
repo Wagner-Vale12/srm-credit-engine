@@ -190,6 +190,16 @@ describe('SRM Credit Engine API (e2e)', () => {
       .expect(200);
 
     expect(reportResponse.body).toBeDefined();
+
+    const analyticalReportResponse = await request(app.getHttpServer())
+      .get('/api/v1/settlement-reports?page=1&limit=10&currencyCode=BRL')
+      .set('x-correlation-id', 'e2e-financial-flow')
+      .expect(200);
+
+    expect(analyticalReportResponse.body).toMatchObject({
+      meta: { page: 1, limit: 10 },
+    });
+    expect(Array.isArray(analyticalReportResponse.body.data)).toBe(true);
   });
   it('GET /api/v1/not-found should return standardized 404 error', async () => {
     const response = await request(app.getHttpServer())

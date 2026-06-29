@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -9,6 +9,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { CreateSettlementDto } from './dto/create-settlement.dto';
+import { ListSettlementsQueryDto } from './dto/list-settlements-query.dto';
 import { SettlementsService } from './settlements.service';
 
 @ApiTags('Settlements')
@@ -76,6 +77,49 @@ export class SettlementsController {
   })
   create(@Body() dto: CreateSettlementDto) {
     return this.settlementsService.create(dto);
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'List settlements',
+    description:
+      'Returns a paginated settlement list with optional filters by status, payment currency, receivable type, cedent and settlement date.',
+  })
+  @ApiOkResponse({
+    description: 'Settlements returned successfully.',
+    schema: {
+      example: {
+        data: [
+          {
+            settlementId: 'f4138d8a-e3c3-4bdc-8002-f51ea9d64268',
+            receivableId: '5b2094da-53fe-43a6-99e7-ed67bbfadc4f',
+            cedentName: 'Cedente Demonstração LTDA',
+            receivableType: 'DUPLICATA_MERCANTIL',
+            receivableCurrency: 'BRL',
+            paymentCurrency: 'BRL',
+            faceValue: '10000.00',
+            presentValue: '9636.39',
+            paymentAmount: '9636.39',
+            discountAmount: '363.61',
+            baseRateMonthly: '1.0000',
+            spreadMonthly: '1.5000',
+            effectiveMonthlyRate: '2.5000',
+            exchangeRate: null,
+            status: 'CONFIRMED',
+            settlementDate: '2026-06-29T00:00:00.000Z',
+          },
+        ],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 1,
+          totalPages: 1,
+        },
+      },
+    },
+  })
+  findAll(@Query() query: ListSettlementsQueryDto) {
+    return this.settlementsService.findAll(query);
   }
 
   @Get(':id/report')
