@@ -17,9 +17,11 @@ srm-credit-engine
 │   └── shared
 ├── docs
 │   ├── adr
+│   ├── api
 │   ├── architecture
 │   ├── c4
-│   └── database
+│   ├── database
+│   └── DELIVERY.md
 ├── .github
 │   └── workflows
 ├── docker-compose.yml
@@ -56,7 +58,7 @@ POST /api/v1/currencies/rates
 
 ### Receivables Engine
 
-Responsible for registering and listing receivables.
+Responsible for registering, retrieving and listing receivables.
 
 Endpoints:
 
@@ -64,6 +66,39 @@ Endpoints:
 POST /api/v1/receivables
 GET  /api/v1/receivables
 GET  /api/v1/receivables/:id
+```
+
+The list endpoint supports pagination and filters:
+
+```txt
+page
+limit
+status
+currencyCode
+receivableTypeCode
+cedentId
+dueDateFrom
+dueDateTo
+```
+
+Example:
+
+```txt
+GET /api/v1/receivables?page=1&limit=10&status=REGISTERED&currencyCode=BRL
+```
+
+Paginated response format:
+
+```json
+{
+  "data": [],
+  "meta": {
+    "page": 1,
+    "limit": 10,
+    "total": 0,
+    "totalPages": 0
+  }
+}
 ```
 
 ### Pricing Engine
@@ -184,7 +219,7 @@ src/shared/interceptors
 
 ## Observability
 
-The backend includes basic observability support using NestJS native Logger.
+The backend includes observability support using NestJS native Logger and request correlation.
 
 Implemented features:
 
@@ -194,8 +229,10 @@ Implemented features:
 - Structured JSON logs for failed requests
 - Request duration logging
 - HTTP method, path and status code logging
+- Global Exception Filter
+- Standardized error responses
 
-Example log:
+Example successful request log:
 
 ```json
 {
@@ -205,6 +242,20 @@ Example log:
   "path": "/api/v1/health",
   "statusCode": 200,
   "durationMs": 5
+}
+```
+
+Example standardized error response:
+
+```json
+{
+  "statusCode": 400,
+  "error": "Bad Request",
+  "message": ["validation message"],
+  "path": "/api/v1/receivables",
+  "method": "POST",
+  "correlationId": "srm-test-123",
+  "timestamp": "2026-06-29T00:00:00.000Z"
 }
 ```
 
@@ -274,14 +325,33 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5433/srm_credit_engine?sc
 
 ### Run Prisma migrations
 
+For local development:
+
 ```bash
 npx prisma migrate dev
+```
+
+For delivery or CI-like validation:
+
+```bash
+npx prisma migrate deploy
 ```
 
 ### Run seed
 
 ```bash
 npx prisma db seed
+```
+
+The seed creates:
+
+```txt
+BRL
+USD
+USD/BRL exchange rate
+Duplicata Mercantil
+Cheque Pré-datado
+Demo cedent
 ```
 
 ### Generate Prisma Client
@@ -318,11 +388,46 @@ GET /api/v1/health
 
 From `apps/backend`:
 
+### Unit tests
+
 ```bash
 npm run test
 ```
 
-Run build:
+Covered services:
+
+```txt
+PricingService
+ReceivablesService
+SettlementsService
+```
+
+### E2E tests
+
+```bash
+npm run test:e2e
+```
+
+Covered E2E flows:
+
+```txt
+Health check
+Complete financial flow
+Standardized error handling
+```
+
+The complete financial flow validates:
+
+```txt
+GET  /api/v1/health
+GET  /api/v1/currencies
+POST /api/v1/receivables
+POST /api/v1/pricing/simulate
+POST /api/v1/settlements
+GET  /api/v1/settlements/:id/report
+```
+
+### Build
 
 ```bash
 npm run build
@@ -391,12 +496,74 @@ Example payload:
 GET /api/v1/settlements/:id/report
 ```
 
-## Documentation
+## API Documentation
+
+Swagger/OpenAPI is available at:
+
+```txt
+http://localhost:3000/docs
+```
+
+The Swagger documentation includes:
+
+- Endpoint descriptions
+- Query parameters
+- Request DTOs
+- Success response examples
+- Error response examples
+- Main financial flow endpoints
+
+## API Collection
+
+A Postman collection is available at:
+
+```txt
+docs/api/srm-credit-engine.postman_collection.json
+```
+
+The collection includes requests for:
+
+```txt
+Health
+Currencies
+Exchange rates
+Receivables
+Pricing simulation
+Settlements
+Settlement report
+Error scenarios
+```
+
+## Delivery Guide
+
+The technical delivery guide is available at:
+
+```txt
+docs/DELIVERY.md
+```
+
+It contains:
+
+```txt
+Project overview
+Local setup
+Business flow
+Architecture explanation
+Testing instructions
+CI/CD details
+Technical decisions
+Known limitations
+Suggested next steps
+```
+
+## Additional Documentation
 
 Additional documentation:
 
 ```txt
 AI_USAGE.md
+docs/DELIVERY.md
+docs/api/srm-credit-engine.postman_collection.json
 docs/architecture/backend-overview.md
 docs/architecture/settlement-flow.md
 docs/adr/0001-layered-architecture.md
@@ -428,7 +595,7 @@ AI_USAGE.md
 
 ## Git Workflow
 
-This project uses feature branches, simulated Pull Requests and Conventional Commits.
+This project uses feature branches, Pull Requests and Conventional Commits.
 
 Examples:
 
@@ -446,6 +613,13 @@ docs: add project architecture documentation
 ci: add backend validation workflow
 feat: add backend observability
 feat: implement receivables engine
+test: add receivables and settlements unit tests
+test: add health check e2e test
+test: add financial flow e2e tests
+feat: add global exception filter
+test: add error handling e2e tests
+feat: add receivables pagination and filters
+docs: finalize backend delivery documentation
 ```
 
 ## Current Status
@@ -459,17 +633,27 @@ Implemented:
 - Receivables Engine
 - Pricing Engine
 - Settlement Engine
-- Swagger documentation
+- Settlement report
+- AuditLog
+- Swagger documentation with examples
 - Docker Compose infrastructure
-- Observability
+- Correlation ID middleware
+- Structured request logging
+- Global Exception Filter
+- Standardized error responses
+- Receivables pagination and filters
+- Unit tests
+- E2E tests
 - GitHub Actions CI
 - ADRs
+- Delivery guide
+- Postman collection
 - AI usage documentation
 
+```md
 Pending:
 
 - Frontend application
 - Backend Dockerfile
-- Additional unit tests for Receivables and Settlements
-- Additional C4 documentation
-
+- Production deployment
+```
