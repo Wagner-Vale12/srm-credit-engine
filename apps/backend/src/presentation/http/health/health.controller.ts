@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Health')
 @Controller('health')
@@ -7,11 +7,19 @@ export class HealthController {
   @Get()
   @ApiOperation({
     summary: 'Check API health status',
-    description: 'Returns the current status of the SRM Credit Engine API.',
+    description:
+      'Returns the current runtime status of the SRM Credit Engine API.',
   })
-  @ApiResponse({
-    status: 200,
+  @ApiOkResponse({
     description: 'API is running successfully.',
+    schema: {
+      example: {
+        status: 'ok',
+        service: 'srm-credit-engine-api',
+        timestamp: '2026-06-29T00:00:00.000Z',
+        uptime: 120.52,
+      },
+    },
   })
   check() {
     return {

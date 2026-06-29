@@ -1,0 +1,347 @@
+{
+  "info": {
+    "name": "SRM Credit Engine API",
+    "description": "Postman collection for validating the SRM Credit Engine backend API flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "cedentId",
+      "value": "e5a980cf-f8e9-4fbe-8f47-cdbddef28434"
+    },
+    {
+      "key": "receivableId",
+      "value": ""
+    },
+    {
+      "key": "settlementId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-health-check"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Currencies",
+      "item": [
+        {
+          "name": "GET Supported Currencies",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-list-currencies"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/currencies",
+              "host": ["{{baseUrl}}"],
+              "path": ["currencies"]
+            }
+          }
+        },
+        {
+          "name": "GET Latest Exchange Rates",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-latest-rates"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/currencies/rates/latest",
+              "host": ["{{baseUrl}}"],
+              "path": ["currencies", "rates", "latest"]
+            }
+          }
+        },
+        {
+          "name": "POST Upsert USD Exchange Rate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-correlation-id",
+                "value": "postman-upsert-rate"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currencyCode\": \"USD\",\n  \"rate\": \"5.50000000\",\n  \"rateDate\": \"2026-06-26\",\n  \"source\": \"postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/currencies/rates",
+              "host": ["{{baseUrl}}"],
+              "path": ["currencies", "rates"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Receivables",
+      "item": [
+        {
+          "name": "POST Create Receivable",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.id) {",
+                  "  pm.collectionVariables.set('receivableId', body.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-correlation-id",
+                "value": "postman-create-receivable"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedentId\": \"{{cedentId}}\",\n  \"receivableTypeCode\": \"DUPLICATA_MERCANTIL\",\n  \"currencyCode\": \"BRL\",\n  \"faceValue\": \"10000.00\",\n  \"dueDate\": \"2026-07-30\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/receivables",
+              "host": ["{{baseUrl}}"],
+              "path": ["receivables"]
+            }
+          }
+        },
+        {
+          "name": "GET Receivables Paginated",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-list-receivables"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/receivables?page=1&limit=10&status=REGISTERED&currencyCode=BRL",
+              "host": ["{{baseUrl}}"],
+              "path": ["receivables"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "REGISTERED"
+                },
+                {
+                  "key": "currencyCode",
+                  "value": "BRL"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Receivable By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-get-receivable"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/receivables/{{receivableId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["receivables", "{{receivableId}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pricing",
+      "item": [
+        {
+          "name": "POST Simulate Pricing",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-correlation-id",
+                "value": "postman-pricing-simulate"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"faceValue\": \"10000.00\",\n  \"currencyCode\": \"BRL\",\n  \"receivableType\": \"DUPLICATA_MERCANTIL\",\n  \"baseRateMonthly\": \"1.00\",\n  \"dueDate\": \"2026-07-30\",\n  \"simulationDate\": \"2026-06-29\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/pricing/simulate",
+              "host": ["{{baseUrl}}"],
+              "path": ["pricing", "simulate"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settlements",
+      "item": [
+        {
+          "name": "POST Create Settlement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.settlementId) {",
+                  "  pm.collectionVariables.set('settlementId', body.settlementId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-correlation-id",
+                "value": "postman-create-settlement"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"receivableId\": \"{{receivableId}}\",\n  \"paymentCurrencyCode\": \"BRL\",\n  \"baseRateMonthly\": \"1.00\",\n  \"settlementDate\": \"2026-06-29\",\n  \"userId\": \"postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/settlements",
+              "host": ["{{baseUrl}}"],
+              "path": ["settlements"]
+            }
+          }
+        },
+        {
+          "name": "GET Settlement Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-settlement-report"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/settlements/{{settlementId}}/report",
+              "host": ["{{baseUrl}}"],
+              "path": ["settlements", "{{settlementId}}", "report"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Errors",
+      "item": [
+        {
+          "name": "GET Not Found Error",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-correlation-id",
+                "value": "postman-not-found"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/not-found",
+              "host": ["{{baseUrl}}"],
+              "path": ["not-found"]
+            }
+          }
+        },
+        {
+          "name": "POST Receivable Validation Error",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-correlation-id",
+                "value": "postman-validation-error"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/receivables",
+              "host": ["{{baseUrl}}"],
+              "path": ["receivables"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
