@@ -721,3 +721,14 @@ Swagger documentation: completed
 Delivery documentation: completed
 Frontend MVP: planned
 ```
+# Complemento — relatório analítico
+
+Foi adicionada a rota `GET /api/v1/settlement-reports`, com paginação server-side (`page`, `limit`) e filtros opcionais por `cedentId`, `currencyCode`, `receivableTypeCode`, `settlementDateFrom` e `settlementDateTo`.
+
+Exemplo:
+
+```bash
+curl "http://localhost:3000/api/v1/settlement-reports?page=1&limit=25&currencyCode=BRL&settlementDateFrom=2026-06-01&settlementDateTo=2026-06-30"
+```
+
+O frontend envia filtros e paginação ao servidor por `listReceivables(query)` e disponibiliza `getSettlementReportList(query)` para consumo do relatório analítico. A resposta paginada contém `data` e `meta` (`page`, `limit`, `total`, `totalPages`).

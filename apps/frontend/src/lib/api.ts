@@ -5,6 +5,9 @@ import type {
   PaginatedResponse,
   PricingSimulationPayload,
   Receivable,
+  ReceivableQuery,
+  SettlementReportQuery,
+  SettlementReportRow,
   SettlementPayload,
 } from "../types";
 
@@ -29,6 +32,15 @@ export class ApiError extends Error {
 
 function createCorrelationId() {
   return `web-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function toQueryString<T extends object>(query: T) {
+  const params = new URLSearchParams();
+  Object.entries(query).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") params.set(key, String(value));
+  });
+  const value = params.toString();
+  return value ? `?${value}` : "";
 }
 
 async function request<T>(
@@ -63,9 +75,19 @@ export const api = {
     return request<Currency[]>("/currencies");
   },
 
-  receivables() {
+  listReceivables(query: ReceivableQuery = {}) {
     return request<PaginatedResponse<Receivable>>(
-      "/receivables?page=1&limit=10",
+      `/receivables${toQueryString(query)}`,
+    );
+  },
+
+  receivables() {
+    return this.listReceivables({ page: 1, limit: 10 });
+  },
+
+  getSettlementReportList(query: SettlementReportQuery = {}) {
+    return request<PaginatedResponse<SettlementReportRow>>(
+      `/settlement-reports${toQueryString(query)}`,
     );
   },
 

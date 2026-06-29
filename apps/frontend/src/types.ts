@@ -40,6 +40,42 @@ export type PaginatedResponse<T> = {
   };
 };
 
+export type ReceivableQuery = {
+  page?: number;
+  limit?: number;
+  status?: string;
+  currencyCode?: string;
+  receivableTypeCode?: string;
+  cedentId?: string;
+  dueDateFrom?: string;
+  dueDateTo?: string;
+};
+
+export type SettlementReportQuery = {
+  page?: number;
+  limit?: number;
+  cedentId?: string;
+  currencyCode?: string;
+  receivableTypeCode?: string;
+  settlementDateFrom?: string;
+  settlementDateTo?: string;
+};
+
+export type SettlementReportRow = {
+  settlementId: string;
+  receivableId: string;
+  cedentName: string;
+  receivableType: string;
+  receivableCurrency: string;
+  paymentCurrency: string;
+  faceValue: string;
+  presentValue: string;
+  paymentAmount: string;
+  discountAmount: string;
+  status: string;
+  settlementDate: string;
+};
+
 export type CreateReceivablePayload = {
   cedentId: string;
   receivableTypeCode: string;

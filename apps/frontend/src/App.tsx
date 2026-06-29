@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 import "./App.css";
 import { ApiError, api } from "./lib/api";
+import { Pagination } from "./components/Pagination";
+import { ReceivableFilters } from "./components/ReceivableFilters";
+import { ReceivablesTable } from "./components/ReceivablesTable";
 import type {
   ApiHealth,
   CreateReceivablePayload,
   Currency,
   PricingSimulationPayload,
   Receivable,
+  ReceivableQuery,
 } from "./types";
 
 function formatJson(value: unknown) {
@@ -51,6 +55,8 @@ function App() {
   const [health, setHealth] = useState<ApiHealth | null>(null);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [receivables, setReceivables] = useState<Receivable[]>([]);
+  const [receivableQuery, setReceivableQuery] = useState<ReceivableQuery>({ page: 1, limit: 10 });
+  const [receivableMeta, setReceivableMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -90,21 +96,32 @@ function App() {
     setError("");
 
     try {
-      const [healthResponse, currenciesResponse, receivablesResponse] =
-        await Promise.all([api.health(), api.currencies(), api.receivables()]);
+      const [healthResponse, currenciesResponse] =
+        await Promise.all([api.health(), api.currencies()]);
 
       setHealth(healthResponse);
       setCurrencies(currenciesResponse);
-      setReceivables(receivablesResponse.data);
-
-      if (receivablesResponse.data[0]?.id) {
-        setSelectedReceivableId(receivablesResponse.data[0].id);
-      }
     } catch (err) {
       setError(getErrorMessage(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadReceivables(query: ReceivableQuery) {
+    try {
+      const response = await api.listReceivables(query);
+      setReceivables(response.data);
+      setReceivableMeta({
+        page: response.meta.page,
+        limit: response.meta.limit,
+        total: response.meta.total ?? 0,
+        totalPages: response.meta.totalPages ?? 0,
+      });
+      if (!selectedReceivableId && response.data[0]?.id) setSelectedReceivableId(response.data[0].id);
+    } catch (err) {
+      setError(getErrorMessage(err));
     }
   }
 
@@ -125,8 +142,14 @@ function App() {
       setCreatedReceivable(response);
       setSelectedReceivableId(response.id);
 
-      const receivablesResponse = await api.receivables();
+      const receivablesResponse = await api.listReceivables(receivableQuery);
       setReceivables(receivablesResponse.data);
+      setReceivableMeta({
+        page: receivablesResponse.meta.page,
+        limit: receivablesResponse.meta.limit,
+        total: receivablesResponse.meta.total ?? 0,
+        totalPages: receivablesResponse.meta.totalPages ?? 0,
+      });
     } catch (err) {
       setError(getErrorMessage(err));
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -171,7 +194,7 @@ function App() {
         setSettlementId(id);
       }
 
-      const receivablesResponse = await api.receivables();
+      const receivablesResponse = await api.listReceivables(receivableQuery);
       setReceivables(receivablesResponse.data);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -183,7 +206,7 @@ function App() {
 
   async function handleLoadSettlementReport() {
     if (!settlementId) {
-      setError("Informe o settlementId para buscar o relatório.");
+      setError("Enter the settlement ID to load the report.");
       return;
     }
 
@@ -205,6 +228,10 @@ function App() {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    void loadReceivables(receivableQuery);
+  }, [receivableQuery]);
 
   return (
     <main className="app">
@@ -301,7 +328,7 @@ function App() {
                 }
               >
                 <option value="DUPLICATA_MERCANTIL">Duplicata Mercantil</option>
-                <option value="CHEQUE_PRE_DATADO">Cheque Pré-datado</option>
+                <option value="CHEQUE_PRE_DATADO">Post-dated Check</option>
               </select>
             </label>
 
@@ -393,69 +420,11 @@ function App() {
               <span className="step">04</span>
               <h2>Receivables List</h2>
             </div>
-            <span className="badge">{receivables.length} registros</span>
+            <span className="badge">{receivableMeta.total} records</span>
           </div>
-
-          <div className="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Type</th>
-                  <th>Currency</th>
-                  <th>Value</th>
-                  <th>Due date</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {receivables.map((receivable) => {
-                  const isSelected = selectedReceivableId === receivable.id;
-
-                  return (
-                    <tr
-                      key={receivable.id}
-                      className={isSelected ? "selected-row" : undefined}
-                    >
-                      <td title={receivable.id}>
-                        {receivable.id.slice(0, 8)}...
-                      </td>
-
-                      <td>
-                        {receivable.receivableTypeCode ??
-                          receivable.receivableType ??
-                          "-"}
-                      </td>
-
-                      <td>{receivable.currencyCode}</td>
-
-                      <td>{receivable.faceValue}</td>
-
-                      <td>{receivable.dueDate}</td>
-
-                      <td>
-                        <span className="badge">{receivable.status}</span>
-                      </td>
-
-                      <td>
-                        <button
-                          type="button"
-                          className={
-                            isSelected ? "secondary selected" : "secondary"
-                          }
-                          onClick={() => setSelectedReceivableId(receivable.id)}
-                        >
-                          {isSelected ? "Selected" : "Select"}
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ReceivableFilters value={receivableQuery} onChange={setReceivableQuery} />
+          <ReceivablesTable items={receivables} selectedId={selectedReceivableId} onSelect={setSelectedReceivableId} />
+          <Pagination page={receivableMeta.page} totalPages={receivableMeta.totalPages} limit={receivableMeta.limit} onPageChange={(page) => setReceivableQuery((current) => ({ ...current, page }))} onLimitChange={(limit) => setReceivableQuery((current) => ({ ...current, page: 1, limit }))} />
         </article>
       </section>
 

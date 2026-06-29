@@ -4,10 +4,11 @@ import { PricingModule } from '../pricing/pricing.module';
 
 import { SettlementsController } from './settlements.controller';
 import { SettlementsService } from './settlements.service';
+import { SettlementReportsController } from './settlement-reports.controller';
 
 @Module({
   imports: [PrismaModule, PricingModule],
-  controllers: [SettlementsController],
+  controllers: [SettlementsController, SettlementReportsController],
   providers: [SettlementsService],
   exports: [SettlementsService],
 })

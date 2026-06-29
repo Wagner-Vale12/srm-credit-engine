@@ -657,3 +657,28 @@ Pending:
 - Backend Dockerfile
 - Production deployment
 ```
+# Relatório analítico e paginação
+
+O relatório consolidado de liquidações está disponível em:
+
+```http
+GET /api/v1/settlement-reports?page=1&limit=10&cedentId=<uuid>&currencyCode=BRL&receivableTypeCode=DUPLICATA_MERCANTIL&settlementDateFrom=2026-06-01&settlementDateTo=2026-06-30
+```
+
+Todos os filtros são opcionais. `page` começa em `1`, `limit` aceita de `1` a `100`, e a resposta segue o formato `{ data, meta: { page, limit, total, totalPages } }`. A listagem de recebíveis usa o mesmo padrão em `GET /api/v1/receivables`, com os filtros `status`, `currencyCode`, `receivableTypeCode`, `cedentId`, `dueDateFrom` e `dueDateTo`.
+
+## Endpoints completos
+
+- `GET /api/v1/health`
+- `GET /api/v1/currencies`
+- `GET /api/v1/currencies/rates/latest`
+- `POST /api/v1/currencies/rates`
+- `POST /api/v1/pricing/simulate`
+- `POST /api/v1/receivables`
+- `GET /api/v1/receivables`
+- `GET /api/v1/receivables/:id`
+- `POST /api/v1/settlements`
+- `GET /api/v1/settlements`
+- `GET /api/v1/settlements/:id/report`
+- `GET /api/v1/settlement-reports`
+- `GET /docs` (Swagger)

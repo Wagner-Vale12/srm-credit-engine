@@ -11,6 +11,8 @@ import { PricingService } from '../../../application/pricing/pricing.service';
 import { PricingReceivableType } from '../../../application/pricing/pricing.types';
 import {
   CreateSettlementInput,
+  ListSettlementsInput,
+  PaginatedSettlements,
   SettlementReport,
   SettlementSummary,
 } from './settlements.types';
@@ -184,6 +186,117 @@ export class SettlementsService {
     });
   }
 
+  async findAll(input: ListSettlementsInput = {}): Promise<PaginatedSettlements> {
+    const page = input.page ?? 1;
+    const limit = input.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const where: Prisma.SettlementWhereInput = {};
+
+    if (input.status) {
+      where.status = input.status as Prisma.EnumSettlementStatusFilter;
+    }
+
+    if (input.currencyCode) {
+      where.paymentCurrency = {
+        code: input.currencyCode,
+      };
+    }
+
+    if (input.receivableTypeCode || input.cedentId) {
+      const receivableWhere: Prisma.ReceivableWhereInput = {
+        ...(input.receivableTypeCode
+          ? { type: { code: input.receivableTypeCode } }
+          : {}),
+        ...(input.cedentId ? { cedentId: input.cedentId } : {}),
+      };
+      where.receivable = receivableWhere;
+    }
+
+    if (input.settlementDateFrom || input.settlementDateTo) {
+      where.settlementDate = {
+        ...(input.settlementDateFrom ? { gte: new Date(input.settlementDateFrom) } : {}),
+        ...(input.settlementDateTo
+          ? { lte: this.toInclusiveEndDate(input.settlementDateTo) }
+          : {}),
+      };
+    }
+
+    const [total, settlements] = await this.prisma.$transaction([
+      this.prisma.settlement.count({ where }),
+      this.prisma.settlement.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: {
+          settlementDate: 'desc',
+        },
+        include: {
+          paymentCurrency: true,
+          items: {
+            include: {
+              currency: true,
+            },
+          },
+          receivable: {
+            include: {
+              cedent: true,
+              type: true,
+              currency: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      data: settlements.map((settlement) => {
+        const item = settlement.items[0];
+        const faceValue = new Decimal(settlement.receivable.faceValue.toString());
+        const presentValue = new Decimal(settlement.presentValue.toString());
+        const paymentAmount = item
+          ? new Decimal(item.amount.toString())
+          : presentValue;
+        const discountAmount = faceValue.minus(presentValue);
+
+        return {
+          settlementId: settlement.id,
+          receivableId: settlement.receivable.id,
+          cedentName: settlement.receivable.cedent.name,
+          receivableType: settlement.receivable.type.code,
+          receivableCurrency: settlement.receivable.currency.code,
+          paymentCurrency: settlement.paymentCurrency.code,
+          faceValue: this.formatMoney(faceValue),
+          presentValue: this.formatMoney(presentValue),
+          paymentAmount: this.formatMoney(paymentAmount),
+          discountAmount: this.formatMoney(discountAmount),
+          baseRateMonthly: new Decimal(settlement.baseRate.toString())
+            .mul(100)
+            .toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
+            .toFixed(4),
+          spreadMonthly: new Decimal(settlement.spreadPercent.toString())
+            .mul(100)
+            .toDecimalPlaces(4, Decimal.ROUND_HALF_UP)
+            .toFixed(4),
+          effectiveMonthlyRate: this.formatRate(
+            new Decimal(settlement.baseRate.toString())
+              .mul(100)
+              .plus(new Decimal(settlement.spreadPercent.toString()).mul(100)),
+          ),
+          exchangeRate: settlement.exchangeRate?.toString() ?? null,
+          status: settlement.status,
+          settlementDate: settlement.settlementDate.toISOString(),
+        };
+      }),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async getReport(settlementId: string): Promise<SettlementReport> {
     const settlement = await this.prisma.settlement.findUnique({
       where: {
@@ -211,17 +324,12 @@ export class SettlementsService {
     }
 
     const item = settlement.items[0];
-
     const faceValue = new Decimal(settlement.receivable.faceValue.toString());
     const presentValue = new Decimal(settlement.presentValue.toString());
-    const discountAmount = faceValue.minus(presentValue);
-    const baseRateMonthly = new Decimal(settlement.baseRate.toString()).mul(
-      100,
-    );
-    const spreadMonthly = new Decimal(settlement.spreadPercent.toString()).mul(
-      100,
-    );
-    const effectiveMonthlyRate = baseRateMonthly.plus(spreadMonthly);
+    const baseRateMonthly = new Decimal(settlement.baseRate.toString()).mul(100);
+    const spreadMonthly = new Decimal(
+      settlement.spreadPercent.toString(),
+    ).mul(100);
 
     return {
       settlementId: settlement.id,
@@ -241,16 +349,18 @@ export class SettlementsService {
       },
       pricing: {
         presentValue: this.formatMoney(presentValue),
-        discountAmount: this.formatMoney(discountAmount),
+        discountAmount: this.formatMoney(faceValue.minus(presentValue)),
         baseRateMonthly: this.formatRate(baseRateMonthly),
         spreadMonthly: this.formatRate(spreadMonthly),
-        effectiveMonthlyRate: this.formatRate(effectiveMonthlyRate),
+        effectiveMonthlyRate: this.formatRate(
+          baseRateMonthly.plus(spreadMonthly),
+        ),
       },
       payment: {
         currency: item?.currency.code ?? settlement.paymentCurrency.code,
-        amount: item
-          ? this.formatMoney(new Decimal(item.amount.toString()))
-          : this.formatMoney(presentValue),
+        amount: this.formatMoney(
+          item ? new Decimal(item.amount.toString()) : presentValue,
+        ),
         exchangeRate: settlement.exchangeRate?.toString() ?? null,
       },
     };
@@ -352,6 +462,10 @@ export class SettlementsService {
 
   private toDateOnly(date: Date): string {
     return date.toISOString().split('T')[0];
+  }
+
+  private toInclusiveEndDate(value: string): Date {
+    return new Date(value.length === 10 ? `${value}T23:59:59.999Z` : value);
   }
 
   private formatMoney(value: Decimal): string {
