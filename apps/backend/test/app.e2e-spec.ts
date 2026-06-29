@@ -3,6 +3,7 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
 import { PrismaService } from './../src/infrastructure/database/prisma.service';
+import { GlobalExceptionFilter } from './../src/shared/filters/global-exception.filter';
 
 function addDays(days: number): string {
   const date = new Date();
@@ -53,6 +54,7 @@ describe('SRM Credit Engine API (e2e)', () => {
         transform: true,
       }),
     );
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
     await app.init();
 
@@ -188,5 +190,47 @@ describe('SRM Credit Engine API (e2e)', () => {
       .expect(200);
 
     expect(reportResponse.body).toBeDefined();
+  });
+  it('GET /api/v1/not-found should return standardized 404 error', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/v1/not-found')
+      .set('x-correlation-id', 'e2e-not-found')
+      .expect(404);
+
+    expect(response.body).toMatchObject({
+      statusCode: 404,
+      error: 'Not Found',
+      path: '/api/v1/not-found',
+      method: 'GET',
+      correlationId: 'e2e-not-found',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.message).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.timestamp).toBeDefined();
+  });
+
+  it('POST /api/v1/receivables should return standardized 400 validation error', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/receivables')
+      .set('x-correlation-id', 'e2e-validation-error')
+      .send({})
+      .expect(400);
+
+    expect(response.body).toMatchObject({
+      statusCode: 400,
+      error: 'Bad Request',
+      path: '/api/v1/receivables',
+      method: 'POST',
+      correlationId: 'e2e-validation-error',
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.message).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(Array.isArray(response.body.message)).toBe(true);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    expect(response.body.timestamp).toBeDefined();
   });
 });
