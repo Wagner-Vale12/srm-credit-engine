@@ -1,7 +1,8 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ReceivablesService } from '../../../application/receivables/receivables.service';
 import { CreateReceivableDto } from './dto/create-receivable.dto';
+import { ListReceivablesQueryDto } from './dto/list-receivables-query.dto';
 
 @ApiTags('Receivables')
 @Controller('receivables')
@@ -30,10 +31,14 @@ export class ReceivablesController {
     status: 200,
     description: 'Receivables returned successfully.',
   })
-  findAll() {
-    return this.receivablesService.findAll();
+  findAll(@Query() query: ListReceivablesQueryDto) {
+    return this.receivablesService.findAll(query);
   }
-
+  @ApiOperation({
+    summary: 'List receivables',
+    description:
+      'Returns receivables with pagination and optional filters by status, currency, type, cedent and due date.',
+  })
   @Get(':id')
   @ApiOperation({
     summary: 'Get receivable by id',

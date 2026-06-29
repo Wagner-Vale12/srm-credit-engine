@@ -2,7 +2,6 @@
 
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import Decimal from 'decimal.js';
-import { PrismaService } from '../../infrastructure/database/prisma.service';
 import { ReceivablesService } from './receivables.service';
 
 describe('ReceivablesService', () => {
@@ -12,29 +11,41 @@ describe('ReceivablesService', () => {
   const receivableTypeFindUniqueMock = jest.fn();
   const currencyFindUniqueMock = jest.fn();
   const receivableCreateMock = jest.fn();
-  const receivableFindManyMock = jest.fn();
   const receivableFindUniqueMock = jest.fn();
 
   const prismaMock = {
     cedent: {
-      findUnique: cedentFindUniqueMock,
+      findUnique: jest.fn(),
     },
     receivableType: {
-      findUnique: receivableTypeFindUniqueMock,
+      findUnique: jest.fn(),
     },
     currency: {
-      findUnique: currencyFindUniqueMock,
+      findUnique: jest.fn(),
     },
     receivable: {
-      create: receivableCreateMock,
-      findMany: receivableFindManyMock,
-      findUnique: receivableFindUniqueMock,
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+      count: jest.fn(),
     },
-  } as unknown as PrismaService;
+    $transaction: jest.fn(),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    service = new ReceivablesService(prismaMock);
+
+    prismaMock.cedent.findUnique = cedentFindUniqueMock;
+    prismaMock.receivableType.findUnique = receivableTypeFindUniqueMock;
+    prismaMock.currency.findUnique = currencyFindUniqueMock;
+    prismaMock.receivable.create = receivableCreateMock;
+    prismaMock.receivable.findUnique = receivableFindUniqueMock;
+
+    prismaMock.$transaction.mockImplementation(async (operations) => {
+      return Promise.all(operations);
+    });
+
+    service = new ReceivablesService(prismaMock as any);
   });
 
   const cedent = {
@@ -168,11 +179,37 @@ describe('ReceivablesService', () => {
   });
 
   it('should list receivables', async () => {
-    receivableFindManyMock.mockResolvedValue([receivable]);
+    const receivable = {
+      id: 'receivable-id',
+      faceValue: '10000.000000',
+      dueDate: new Date('2026-07-30'),
+      status: 'REGISTERED',
+      version: 1,
+      createdAt: new Date('2026-06-29T00:00:00.000Z'),
+      cedent: {
+        name: 'Cedente Demonstração LTDA',
+      },
+      type: {
+        code: 'DUPLICATA_MERCANTIL',
+      },
+      currency: {
+        code: 'BRL',
+      },
+    };
+
+    prismaMock.receivable.count.mockResolvedValue(1);
+    prismaMock.receivable.findMany.mockResolvedValue([receivable]);
 
     const result = await service.findAll();
 
-    expect(receivableFindManyMock).toHaveBeenCalledWith({
+    expect(prismaMock.receivable.count).toHaveBeenCalledWith({
+      where: {},
+    });
+
+    expect(prismaMock.receivable.findMany).toHaveBeenCalledWith({
+      where: {},
+      skip: 0,
+      take: 10,
       orderBy: {
         createdAt: 'desc',
       },
@@ -183,9 +220,27 @@ describe('ReceivablesService', () => {
       },
     });
 
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(receivable.id);
-    expect(result[0].status).toBe('REGISTERED');
+    expect(result).toEqual({
+      data: [
+        {
+          id: 'receivable-id',
+          cedentName: 'Cedente Demonstração LTDA',
+          receivableType: 'DUPLICATA_MERCANTIL',
+          currencyCode: 'BRL',
+          faceValue: '10000.00',
+          dueDate: '2026-07-30',
+          status: 'REGISTERED',
+          version: 1,
+          createdAt: '2026-06-29T00:00:00.000Z',
+        },
+      ],
+      meta: {
+        page: 1,
+        limit: 10,
+        total: 1,
+        totalPages: 1,
+      },
+    });
   });
 
   it('should find receivable by id', async () => {
