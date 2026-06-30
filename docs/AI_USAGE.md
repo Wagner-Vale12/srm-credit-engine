@@ -1,125 +1,125 @@
-﻿# AI_USAGE.md — Uso de IA no Projeto SRM Credit Engine
+# AI_USAGE.md — Use of AI in the SRM Credit Engine Project
 
-## 1. Objetivo do uso de IA
+## 1. Purpose of AI Usage
 
-Durante o desenvolvimento do SRM Credit Engine, utilizei IA como apoio técnico para acelerar decisões de arquitetura, revisar pontos do desafio, validar boas práticas e melhorar a documentação da entrega.
+During the development of the SRM Credit Engine, I used AI as a technical support tool to accelerate architectural decisions, review aspects of the challenge, validate best practices, and improve the delivery documentation.
 
-A IA não foi usada para substituir entendimento técnico. As decisões finais, execução local, testes, validações no Swagger, ajustes de Git, modelagem financeira e correções de código foram conduzidas manualmente.
-
----
-
-## 2. Áreas em que a IA foi utilizada
-
-A IA foi utilizada principalmente para:
-
-- revisar a arquitetura backend em NestJS;
-- validar a separação entre controller, service, DTOs, database e domínio;
-- apoiar decisões sobre precisão financeira com Decimal.js;
-- estruturar ADRs;
-- revisar README e documentação final;
-- gerar ideias para testes unitários e E2E;
-- revisar mensagens de commits;
-- identificar lacunas de maturidade para nível Pleno/Sênior;
-- melhorar a clareza da entrega técnica.
+AI was not used as a substitute for technical understanding. Final decisions, local execution, testing, Swagger validation, Git adjustments, financial modeling, and code corrections were performed manually.
 
 ---
 
-## 3. Prompts estratégicos utilizados
+## 2. Areas Where AI Was Used
 
-### Prompt 1 — Arquitetura backend
+AI was used primarily to:
 
-"Estou construindo uma API em NestJS para um desafio financeiro de recebíveis. Preciso separar responsabilidades entre camada de apresentação, aplicação, domínio e infraestrutura. Me ajude a validar uma arquitetura simples, limpa e justificável para nível pleno/sênior."
-
-### Prompt 2 — Precisão financeira
-
-"Tenho cálculos financeiros envolvendo valor de face, taxa mensal, prazo e valor presente. Quais riscos existem em usar number em JavaScript e como posso evitar erro de precisão em uma API financeira?"
-
-### Prompt 3 — Transação de liquidação
-
-"Preciso criar uma liquidação de múltiplos recebíveis em uma única operação. Como modelar isso com Prisma transaction, atualização de status, audit log e proteção contra inconsistência?"
-
-### Prompt 4 — Documentação técnica
-
-"Revise meu README de um projeto financeiro com NestJS, PostgreSQL, Prisma, Docker, testes e GitHub Actions. Aponte o que está forte e o que pode bloquear uma avaliação de nível sênior."
-
-### Prompt 5 — Git workflow
-
-"Como organizar commits, branches, pull requests e documentação para que o histórico do repositório conte uma história clara em um desafio técnico?"
+- review the backend architecture in NestJS;
+- validate the separation between controllers, services, DTOs, database, and domain layers;
+- support decisions regarding financial precision with Decimal.js;
+- structure ADRs;
+- review the README and final documentation;
+- generate ideas for unit and E2E tests;
+- review commit messages;
+- identify maturity gaps for mid-level/senior expectations;
+- improve the clarity of the technical delivery.
 
 ---
 
-## 4. Exemplo de sugestão incorreta ou incompleta da IA
+## 3. Strategic Prompts Used
 
-Durante o desenvolvimento, a IA sugeriu inicialmente simplificar os cálculos financeiros usando `number` e arredondamento com `toFixed`.
+### Prompt 1 — Backend Architecture
 
-Essa abordagem foi rejeitada porque valores financeiros não devem depender de ponto flutuante nativo do JavaScript. Pequenas diferenças de precisão podem gerar erros em cálculos de desconto, valor presente e liquidação.
+"I am building a NestJS API for a financial receivables challenge. I need to separate responsibilities across the presentation, application, domain, and infrastructure layers. Help me validate a simple, clean, and defensible architecture for a mid-level/senior engineer."
 
-A correção aplicada foi utilizar `Decimal.js`, armazenar valores monetários com precisão controlada e documentar a decisão em ADR.
+### Prompt 2 — Financial Precision
 
----
+"I have financial calculations involving face value, monthly rate, term, and present value. What are the risks of using `number` in JavaScript, and how can I avoid precision errors in a financial API?"
 
-## 5. Outro ponto que exigiu revisão humana
+### Prompt 3 — Settlement Transaction
 
-Em alguns momentos, a IA sugeriu validações duplicadas entre DTO e Service.
+"I need to create a settlement for multiple receivables in a single operation. How can I model this using a Prisma transaction, status updates, an audit log, and safeguards against inconsistencies?"
 
-A correção aplicada foi separar melhor as responsabilidades:
+### Prompt 4 — Technical Documentation
 
-- DTO: valida formato, tipo e obrigatoriedade de entrada.
-- Service: valida regra de negócio e consistência da operação.
+"Review my README for a financial project using NestJS, PostgreSQL, Prisma, Docker, tests, and GitHub Actions. Point out what is strong and what could prevent it from being evaluated at a senior level."
 
-Isso evitou espalhar a mesma regra em vários pontos do código.
+### Prompt 5 — Git Workflow
 
----
-
-## 6. Onde a IA ajudou mais
-
-A IA ajudou mais em:
-
-- acelerar a revisão de arquitetura;
-- levantar riscos que poderiam passar despercebidos;
-- melhorar a clareza da documentação;
-- sugerir cenários de teste;
-- organizar ideias para ADRs;
-- revisar pontos explícitos do enunciado;
-- comparar a entrega com critérios de nível Pleno/Sênior.
+"How should I organize commits, branches, pull requests, and documentation so that the repository history tells a clear story in a technical challenge?"
 
 ---
 
-## 7. Onde a IA atrapalhou ou precisou ser limitada
+## 4. Example of an Incorrect or Incomplete AI Suggestion
 
-A IA atrapalhou quando trouxe soluções genéricas demais ou sugeriu melhorias que aumentariam o escopo sem necessidade.
+During development, AI initially suggested simplifying the financial calculations by using `number` and rounding with `toFixed`.
 
-Exemplos:
+This approach was rejected because financial values should not rely on JavaScript's native floating-point arithmetic. Small precision differences can cause errors in discount, present value, and settlement calculations.
 
-- sugestões de autenticação completa em momento que o foco era fechar o core financeiro;
-- sugestões de observabilidade avançada antes de garantir Docker, testes e documentação;
-- respostas iniciais sem considerar totalmente o contexto do enunciado.
-
-Nesses casos, filtrei as sugestões e priorizei o que agregava valor direto à entrega.
+The applied correction was to use `Decimal.js`, store monetary values with controlled precision, and document the decision in an ADR.
 
 ---
 
-## 8. Decisões finais tomadas manualmente
+## 5. Another Point That Required Human Review
 
-As decisões finais foram feitas com base no enunciado, execução local e validação prática:
+At times, AI suggested duplicating validations between DTOs and services.
 
-- uso de NestJS e TypeScript;
-- uso de Prisma com PostgreSQL;
-- uso de Decimal.js para cálculos financeiros;
-- uso de transações ACID na liquidação;
-- aplicação de optimistic locking;
-- padronização de erros com Global Exception Filter;
-- uso de correlation ID;
-- criação de ADRs;
-- configuração de CI/CD;
-- criação de Dockerfile;
-- configuração de pre-commit hooks;
-- criação de tag semântica para release.
+The applied correction was to separate responsibilities more clearly:
+
+- DTO: validates the input format, type, and required fields.
+- Service: validates business rules and operation consistency.
+
+This prevented the same rule from being scattered across multiple parts of the codebase.
 
 ---
 
-## 9. Conclusão
+## 6. Where AI Helped the Most
 
-A IA foi usada como acelerador de engenharia e revisão crítica, não como substituto da implementação.
+AI was most helpful in:
 
-O projeto foi validado com execução local, testes automatizados, build, Swagger/OpenAPI, revisão manual de código e versionamento Git.
+- accelerating architectural reviews;
+- identifying risks that could otherwise go unnoticed;
+- improving documentation clarity;
+- suggesting test scenarios;
+- organizing ideas for ADRs;
+- reviewing explicit requirements from the challenge description;
+- comparing the delivery against mid-level/senior expectations.
+
+---
+
+## 7. Where AI Was Unhelpful or Needed to Be Limited
+
+AI was unhelpful when it offered overly generic solutions or suggested improvements that would unnecessarily increase the project scope.
+
+Examples:
+
+- suggestions to implement full authentication when the priority was completing the core financial features;
+- suggestions for advanced observability before ensuring Docker, tests, and documentation were complete;
+- initial responses that did not fully consider the context of the challenge description.
+
+In these cases, I filtered the suggestions and prioritized what added direct value to the delivery.
+
+---
+
+## 8. Final Decisions Made Manually
+
+Final decisions were based on the challenge description, local execution, and practical validation:
+
+- use of NestJS and TypeScript;
+- use of Prisma with PostgreSQL;
+- use of Decimal.js for financial calculations;
+- use of ACID transactions for settlement;
+- implementation of optimistic locking;
+- error standardization with a Global Exception Filter;
+- use of correlation IDs;
+- creation of ADRs;
+- CI/CD configuration;
+- creation of a Dockerfile;
+- configuration of pre-commit hooks;
+- creation of a semantic release tag.
+
+---
+
+## 9. Conclusion
+
+AI was used as an engineering accelerator and critical review tool, not as a substitute for implementation.
+
+The project was validated through local execution, automated tests, builds, Swagger/OpenAPI, manual code review, and Git version control.
