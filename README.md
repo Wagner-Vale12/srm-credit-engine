@@ -212,9 +212,7 @@ Examples:
 
 ```txt
 src/shared/observability
-src/shared/config
 src/shared/filters
-src/shared/interceptors
 ```
 
 ## Observability
