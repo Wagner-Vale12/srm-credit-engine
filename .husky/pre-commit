@@ -1,0 +1,3 @@
+cd apps/backend
+npm run lint
+npm run test
