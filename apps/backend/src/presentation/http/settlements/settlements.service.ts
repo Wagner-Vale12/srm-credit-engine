@@ -257,10 +257,12 @@ export class SettlementsService {
   }
 
   private mapReceivableTypeCode(code: string): PricingReceivableType {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     if (code === PricingReceivableType.DUPLICATA_MERCANTIL) {
       return PricingReceivableType.DUPLICATA_MERCANTIL;
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
     if (code === PricingReceivableType.CHEQUE_PRE_DATADO) {
       return PricingReceivableType.CHEQUE_PRE_DATADO;
     }

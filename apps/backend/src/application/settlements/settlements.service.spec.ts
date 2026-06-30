@@ -135,6 +135,7 @@ describe('SettlementsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/require-await
     transactionMock.mockImplementation(async (callback) => callback(txMock));
 
     service = new SettlementsService(prismaMock, pricingServiceMock);
@@ -198,6 +199,7 @@ describe('SettlementsService', () => {
     });
 
     expect(settlementCreateMock).toHaveBeenCalledWith({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: expect.objectContaining({
         receivableId: receivable.id,
         presentValue: '97304.520000',
@@ -218,6 +220,7 @@ describe('SettlementsService', () => {
     });
 
     expect(auditLogCreateMock).toHaveBeenCalledWith({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: expect.objectContaining({
         entity: 'Settlement',
         entityId: settlement.id,
