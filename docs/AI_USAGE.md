@@ -1,8 +1,16 @@
 # AI_USAGE.md — Use of AI in the SRM Credit Engine Project
 
+## 0. Challenge Context
+
+The SRM Credit Engine challenge consisted of building a financial receivables platform capable of registering receivables, simulating pricing, applying exchange rates, settling receivables, generating reports, and preserving consistency through transactional operations.
+
+The main technical challenge was not only to expose CRUD endpoints, but to model a financial workflow with precision, traceability, validation, automated tests, documentation, Docker support, Git workflow discipline, and clear engineering decisions.
+
+Because the project deals with financial calculations, I had to pay special attention to decimal precision, transactional consistency, optimistic locking, error handling, auditability, and API documentation.
+
 ## 1. Purpose of AI Usage
 
-During the development of the SRM Credit Engine, I used AI as a technical support tool to accelerate architectural decisions, review aspects of the challenge, validate best practices, and improve the delivery documentation.
+During the development of the SRM Credit Engine, I used AI as a technical support tool to accelerate architectural decisions, review challenge requirements, validate best practices, and improve the delivery documentation.
 
 AI was not used as a substitute for technical understanding. Final decisions, local execution, testing, Swagger validation, Git adjustments, financial modeling, and code corrections were performed manually.
 
